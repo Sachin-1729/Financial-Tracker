@@ -12,7 +12,6 @@ export class CreateTransactionDto {
   @ApiProperty({ enum: ['income', 'expense'], example: 'income' })
   type: 'income' | 'expense';
 
-  @IsOptional()
   @IsString()
   @ApiProperty({ example: 'Freelance payment', required: false })
   description?: string;

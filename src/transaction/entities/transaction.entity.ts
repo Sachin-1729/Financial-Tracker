@@ -12,7 +12,7 @@ export class Transaction {
   @Column({ type: 'enum', enum: ['income', 'expense'] })
   type: 'income' | 'expense';
 
-  @Column({ nullable: true })
+  @Column({ nullable: false })
   description: string;
 
   @Column({ type: 'date' })
