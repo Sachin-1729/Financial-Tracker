@@ -27,10 +27,13 @@ export class TransactionService {
     return this.transactionRepository.save(transaction);
   }
 
-  async findAll(userId: number) {
+  async findAll(userId: number, take: number, skip: number) {
     return this.transactionRepository.find({
       where: { user: { id: userId } },
       order: { date: 'DESC' },
+      take,
+      skip,
+
     });
   }
 

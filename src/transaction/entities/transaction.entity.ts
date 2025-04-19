@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne ,   CreateDateColumn,
+    UpdateDateColumn, } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 
 @Entity()
@@ -20,4 +21,11 @@ export class Transaction {
 
   @ManyToOne(() => User, { nullable: false, eager: true })
   user: User;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+
 }
