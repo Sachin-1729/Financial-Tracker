@@ -66,13 +66,21 @@ export class TransactionService {
     const transaction = await this.findOne(id, userId); // includes check
 
     Object.assign(transaction, dto);
+   const savedTransaction = await this.transactionRepository.save(transaction);
+   // Emit the event after saving the transaction
+   eventEmitter.emit('transaction.updated', transaction);
 
-    return this.transactionRepository.save(transaction);
+    return savedTransaction;
+   
   }
 
   async remove(id: string, userId: number) {
     const transaction = await this.findOne(id, userId); // includes check
+     
+    const deletedTransaction = await this.transactionRepository.remove(transaction);
 
-    return this.transactionRepository.remove(transaction);
-  }
+    // Emit the event after deleting the transaction
+    eventEmitter.emit('transaction.deleted', transaction);
+    return deletedTransaction;
+  }   
 }

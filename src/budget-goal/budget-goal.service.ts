@@ -6,6 +6,8 @@ import {eventEmitter} from "../common/event-emitter"
 import { InjectRepository } from '@nestjs/typeorm';
 import { BudgetGoal } from './entities/budget-goal.entity';
 import { Repository , LessThanOrEqual, MoreThanOrEqual, In, Not, LessThan } from 'typeorm';
+import { Transaction } from 'src/transaction/entities/transaction.entity';
+import { Between } from 'typeorm';
 
 
 @Injectable()
@@ -13,11 +15,93 @@ export class BudgetGoalService {
   constructor(
     @InjectRepository(BudgetGoal)
     private readonly goalRepository: Repository<BudgetGoal>, 
+    @InjectRepository(Transaction)
+    private readonly transactionRepository: Repository<Transaction>,
 
 
   ) {
     eventEmitter.on('transaction.created', this.updateBudgetGoal.bind(this));
+    eventEmitter.on('transaction.updated', this.recalculateGoals.bind(this));
+    eventEmitter.on('transaction.deleted', this.recalculateGoals.bind(this));
   }
+
+  async recalculateGoals(transaction) {
+    const { userId } = transaction;
+    const today = new Date();
+  
+    // Find the current goal
+    const goal = await this.goalRepository.findOne({
+      where: {
+        user: { id: userId },
+        status: In(['active', 'over-budget', 'under-budget']),
+        startDate: LessThanOrEqual(today),
+        endDate: MoreThanOrEqual(today),
+      },
+      relations: ['user'],
+    });
+  
+    if (!goal) {
+      console.log('No active goal found for user');
+      return;
+    }
+  
+    // Get all transactions during this goal period
+    const allTransactions = await this.transactionRepository.find({
+      where: {
+        user: { id: userId },
+        createdAt: Between(goal.startDate, goal.endDate),
+      },
+    });
+  
+    // Recalculate remainingAmount from scratch
+    let totalChange = 0;
+
+    for (const txn of allTransactions) {
+      const amount = typeof txn.amount === 'string' ? parseFloat(txn.amount) : txn.amount;
+      if (isNaN(amount)) {
+        console.warn('Invalid txn amount:', txn.amount);
+        continue;
+      }
+    
+      if (txn.type === 'expense') {
+        totalChange -= amount;
+      } else if (txn.type === 'income') {
+        totalChange += amount;
+      }
+    }
+    
+    const goalAmount = typeof goal.goalAmount=== 'string' ? parseFloat(goal.goalAmount) : goal.goalAmount; // safely convert string to number
+    const rawRemaining = goalAmount + totalChange;
+    const roundedRemaining = Math.round(rawRemaining * 100) / 100;
+    
+    goal.remainingAmount = roundedRemaining;
+    
+    console.log({
+      goalAmount,
+      totalChange,
+      rawRemaining,
+      rounded: roundedRemaining,
+    });
+    
+    console.log('Goal updated:', goal);    
+    
+    // Update status
+    if (goal.remainingAmount > 0) {
+      goal.status = 'active';
+    } else if (goal.remainingAmount === 0) {
+      goal.status = 'active';
+    } else {
+      goal.status = 'over-budget';
+    }
+  
+    const now = new Date();
+    if (now > goal.endDate) {
+      goal.status = goal.remainingAmount <= 0 ? 'over-budget' : 'under-budget';
+    }
+  
+    await this.goalRepository.save(goal);
+  }
+  
 
   async updateBudgetGoal(transaction) {
     console.log('Transaction data received:', transaction);
