@@ -11,7 +11,4 @@ export class CreateAuthDto {
   @IsString()
   password: string;
 
-  @ApiProperty({ example: 2, required: false, description: 'Optional. Defaults to 2' })
-  @IsOptional()
-  roleId?: number;
 }

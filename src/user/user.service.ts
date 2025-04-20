@@ -1,10 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs'; 
+import { ConflictException } from '@nestjs/common'; // To throw a specific exception for conflict
+
 
 @Injectable()
 export class UserService {
@@ -24,15 +26,42 @@ export class UserService {
       return bcrypt.compare(password, hashedPassword);
     }
 
-  async create(createUserDto: CreateUserDto): Promise<User> {
-    const hashedPassword = await this.hashPassword(createUserDto.password);
-    const user = this.userRepository.create({
-      ...createUserDto,
-      password: hashedPassword,  // Store hashed password
-    });
-    return this.userRepository.save(user);
-  }
-
+    async create(createUserDto: CreateUserDto): Promise<User> {
+      try {
+        // Check if the user already exists by email
+        const existingUser = await this.userRepository.findOne({ where: { email: createUserDto.email } });
+    
+        if (existingUser) {
+          // If the user exists, throw a ConflictException
+          throw new ConflictException('Email already exists');
+        }
+    
+        // Hash the password before saving
+        const hashedPassword = await this.hashPassword(createUserDto.password);
+    
+        // Create the user object with the hashed password
+        const user = this.userRepository.create({
+          ...createUserDto,
+          password: hashedPassword,  // Store hashed password
+        });
+    
+        // Save the new user to the database
+        return await this.userRepository.save(user);
+      } catch (error) {
+        // Log the error details for debugging purposes
+        console.error('Error creating user:', error);
+    
+        // If the error is due to a conflict (e.g., duplicate email), return the conflict error
+        if (error instanceof ConflictException) {
+          console.log('Duplicate email detected');
+          throw error;  // Rethrow the conflict exception to return a 409 Conflict
+        }
+    
+        // For other errors, throw an internal server error with a message
+        console.log('Internal server error occurred');
+        throw new InternalServerErrorException('An unexpected error occurred while creating the user');
+      }
+    }
  
   async findAll(): Promise<User[]> {
     return this.userRepository.find();
