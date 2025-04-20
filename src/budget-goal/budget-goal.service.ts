@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CreateBudgetGoalDto } from './dto/create-budget-goal.dto';
 import { UpdateBudgetGoalDto } from './dto/update-budget-goal.dto';
+import { ConflictException } from '@nestjs/common';
 import {eventEmitter} from "../common/event-emitter"
 import { InjectRepository } from '@nestjs/typeorm';
 import { BudgetGoal } from './entities/budget-goal.entity';
@@ -97,11 +98,7 @@ export class BudgetGoalService {
     });
   
     if (activeGoal) {
-      // Instead of throwing an error, return a meaningful response
-      return {
-        success: false,
-        message: 'You already have an active goal in progress.',
-      };
+      throw new ConflictException('You already have an active goal in progress.');
     }
   
     const startDate = today;
