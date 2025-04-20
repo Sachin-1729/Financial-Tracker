@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Transaction } from './entities/transaction.entity';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { User } from '../user/entities/user.entity';
+import { eventEmitter } from 'src/common/event-emitter';
 
 @Injectable()
 export class TransactionService {
@@ -18,13 +19,24 @@ export class TransactionService {
   async create(createTransactionDto: CreateTransactionDto, userId: number) {
     const user = await this.userRepository.findOneBy({ id: userId });
     if (!user) throw new NotFoundException('User not found');
-
+    const currentDate = new Date();
+    const sevenDaysAgo = new Date(currentDate);
+    sevenDaysAgo.setDate(currentDate.getDate() - 7); 
+    const transactionDate = new Date(createTransactionDto.date);
+    if (transactionDate < sevenDaysAgo || transactionDate > currentDate) {
+      throw new BadRequestException('Transaction date must be within the last 7 days.');
+  }
     const transaction = this.transactionRepository.create({
       ...createTransactionDto,
       user,
     });
+    const savedTransaction = await this.transactionRepository.save(transaction);
+  // Emit the event after saving the transaction
+    eventEmitter.emit('transaction.created', transaction);
 
-    return this.transactionRepository.save(transaction);
+
+     // Return the saved transaction
+  return savedTransaction;
   }
 
   async findAll(userId: number, take: number, skip: number) {
