@@ -1,10 +1,10 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Req, UseGuards, Query } from '@nestjs/common';
 import { Request } from 'express';
 import { TransactionService } from './transaction.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { JwtAuthGuard } from 'src/guard/auth.guard';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 
 
 @ApiBearerAuth() 
@@ -20,9 +20,18 @@ export class TransactionController {
   }
 
   @Get()
-  findAll(@Req() request: Request) {
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+  findAll(
+    @Req() request: Request,
+    @Query('page') page = 1,
+    @Query('limit') limit = 10
+  ) {
     const user = request.user as any;
-    return this.transactionService.findAll(user.id);
+    const take = Math.min(limit, 100); // cap the limit to 100
+    const skip = (page - 1) * take;
+  
+    return this.transactionService.findAll(user.id, take, skip);
   }
 
   @Get(':id')

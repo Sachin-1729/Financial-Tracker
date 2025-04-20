@@ -4,6 +4,8 @@ import { ConfigModule } from '@nestjs/config';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { TransactionModule } from './transaction/transaction.module';
+import { AnalyticsModule } from './analytics/analytics.module';
+import { BudgetGoalModule } from './budget-goal/budget-goal.module';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
@@ -24,6 +26,8 @@ dotenv.config();
     AuthModule,
     UserModule,
     TransactionModule,
+    AnalyticsModule,
+    BudgetGoalModule,
    
   ],
   controllers: [],
