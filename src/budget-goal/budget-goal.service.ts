@@ -97,7 +97,11 @@ export class BudgetGoalService {
     });
   
     if (activeGoal) {
-      throw new Error('You already have an active goal in progress.');
+      // Instead of throwing an error, return a meaningful response
+      return {
+        success: false,
+        message: 'You already have an active goal in progress.',
+      };
     }
   
     const startDate = today;
