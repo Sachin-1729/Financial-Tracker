@@ -5,7 +5,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors({
-    origin: ['http://localhost:4200', 'http://localhost:3000'],  // Specify your frontend URLs
+    origin: ['http://localhost:4200', 'http://localhost:3000' , 'https://financial-tracker.railway.app'],  // Specify your frontend URLs
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',  // Allow all necessary methods
     credentials: true,  // If you're sending credentials (like cookies or authorization headers)
   });  // Allows requests from any origin, or specify origin using { origin: 'http://localhost:3000' } or an array of allowed origins
