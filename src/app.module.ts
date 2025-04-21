@@ -6,6 +6,8 @@ import { AuthModule } from './auth/auth.module';
 import { TransactionModule } from './transaction/transaction.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { BudgetGoalModule } from './budget-goal/budget-goal.module';
+import { FinanceChatModule } from './finance-chat/finance-chat.module';
+import { LanguageModelModule } from './language-model/language-model.module';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
@@ -28,6 +30,8 @@ dotenv.config();
     TransactionModule,
     AnalyticsModule,
     BudgetGoalModule,
+    FinanceChatModule,
+    LanguageModelModule,
    
   ],
   controllers: [],
